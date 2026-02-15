@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Subrural - Fixed Version with Animated Ground</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    
+    <style>
+      body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+      
+      .controller {
+        position: absolute; 
+        bottom: 40px; 
+        width: 220px; 
+        height: 220px; 
+        z-index: 2000;
+        display: grid; 
+        gap: 10px; 
+        pointer-events: auto;
+      }
+      
+      #move-pad { 
+        left: 20px; 
+        grid-template-areas: 
+          ". up ." 
+          "left . right" 
+          ". down ."; 
+      }
+      
+      .btn {
+        width: 70px; 
+        height: 70px; 
+        background: rgba(0, 0, 0, 0.6); 
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        font-size: 14px; 
+        font-weight: bold; 
+        color: white; 
+        user-select: none; 
+        touch-action: none;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        transition: all 0.1s ease;
+      }
+      
+      .btn:active { 
+        background: rgba(255, 255, 255, 0.9); 
+        color: black; 
+        transform: scale(0.95);
+      }
+      
+      .btn.sprinting {
+        background: rgba(255, 100, 100, 0.8);
+        border-color: #ff0;
+      }
+      
+      #up { grid-area: up; } 
+      #left { grid-area: left; } 
+      #right { grid-area: right; } 
+      #down { grid-area: down; }
+      
+      #sprint-indicator {
+        position: absolute;
+        bottom: 280px;
+        left: 50px;
+        width: 100px;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 5px;
+        z-index: 2001;
+        overflow: hidden;
+        display: none;
+      }
+      
+      #sprint-progress {
+        width: 0%;
+        height: 100%;
+        background: #ffaa00;
+        transition: width 0.1s linear;
+      }
+      
+      /* Camera control instructions */
+      .instructions {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 2000;
+        pointer-events: none;
+        backdrop-filter: blur(4px);
+      }
+      
+      @media (max-width: 400px) {
+        .controller { transform: scale(0.8); left: 0; bottom: 20px; }
+        #sprint-indicator { left: 30px; bottom: 240px; }
+        .instructions { font-size: 12px; top: 10px; right: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sprint progress indicator -->
+    <div id="sprint-indicator">
+      <div id="sprint-progress"></div>
+    </div>
+
+    <!-- Camera control instructions -->
+    <div class="instructions">
+      Swipe: Left/Right = Rotate View<br>
+      Swipe: Up/Down = Tilt Camera
+    </div>
+
+    <!-- Movement controls -->
+    <div id="move-pad" class="controller">
+      <div class="btn" id="up">FWD</div>
+      <div class="btn" id="left">←</div>
+      <div class="btn" id="right">→</div>
+      <div class="btn" id="down">BWD</div>
+    </div>
+
+    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true">
+      <a-assets>
+        <a-asset-item id="subrural" src="Subrural.glb"></a-asset-item>
+        <a-asset-item id="player" src="Player.glb"></a-asset-item>
+        <a-asset-item id="ground" src="Ground.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- Environment -->
+      <a-entity gltf-model="#subrural" 
+                position="0 0 0"
+                static-body
+                id="environment-collision"></a-entity>
+      
+      <!-- Animated Ground -->
+      <a-entity gltf-model="#ground" 
+                position="0 0 0" 
+                static-body
+                shadow="receive: true"
+                animation-mixer="clip: idle">
+      </a-entity>
+      
+      <a-sky color="#87CEEB"></a-sky>
+
+      <!-- Player Rig - NO physics body to prevent sinking -->
+      <a-entity id="player-rig" 
+                position="0 0.1 0">
+        
+        <!-- Player Model with animation mixer - size reduced 4 times -->
+        <a-entity id="player-model" 
+                  gltf-model="#player" 
+                  scale="0.0023 0.0023 0.0023"  <!-- 4x smaller than before (0.0092/4 = 0.0023) -->
+                  rotation="0 0 0"
+                  animation-mixer="clip: idle; crossFadeDuration: 0.2">
+        </a-entity>
+
+        <!-- Camera positioned behind the player showing their back -->
+        <a-entity id="camera-rig" position="0 2.2 3.5" rotation="0 180 0">
+          <a-entity id="camera" 
+                    camera 
+                    look-controls="pointerLockEnabled: false; enabled: false" <!-- Disabled to prevent conflicts -->
+                    wasd-controls="enabled: false">
+          </a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- Lighting -->
+      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
+      <a-entity light="type: directional; intensity: 0.8; castShadow: true" 
+                position="5 10 5" 
+                target="0 0 0">
+      </a-entity>
+    </a-scene>
+
+    <script>
+      (function() {
+        // Wait for scene to load
+        const scene = document.querySelector('a-scene');
+        if (!scene) {
+          console.error('Scene not found');
+          return;
+        }
+
+        scene.addEventListener('loaded', () => {
+          console.log('Scene loaded, initializing controls...');
+          
+          // Get references with null checks
+          const rig = document.getElementById('player-rig');
+          const model = document.getElementById('player-model');
+          const cameraRig = document.getElementById('camera-rig');
+          const sprintProgress = document.getElementById('sprint-progress');
+          const sprintIndicator = document.getElementById('sprint-indicator');
+          
+          if (!rig || !model || !cameraRig) {
+            console.error('Required elements not found');
+            return;
+          }
+
+          // Movement state
+          let moveKeys = { up: false, down: false, left: false, right: false };
+          let isRunning = false;
+          let sprintCharge = 0;
+          const SPRINT_DELAY = 3000; // 3 seconds
+          const BOUNDARY = 45; // Reduced boundary for better collision with buildings
+          
+          // Camera control state for swipe
+          let cameraRotation = { x: 15, y: 180 }; // Start with slight downward angle
+          let touchStart = { x: 0, y: 0 };
+          let isTouching = false;
+          const SENSITIVITY = 0.5;
+          
+          // Sprint timers per key
+          let sprintTimers = { up: null, down: null, left: null, right: null };
+          
+          // Frame timing for smooth movement
+          let lastTime = performance.now();
+          
+          // Animation state tracking
+          let currentAnim = 'idle';
+          
+          // Store building positions for collision detection (simplified)
+          // In a real implementation, you'd want to use the physics system properly
+          const buildings = [
+            // Define building boundaries here if needed
+            // For now we'll use distance-based collision
+          ];
+          
+          // Button setup function with improved touch handling
+          const setupButton = (id, key) => {
+            const el = document.getElementById(id);
+            if (!el) {
+              console.error(`Button ${id} not found`);
+              return;
+            }
+            
+            const start = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              moveKeys[key] = true;
+              
+              // Show sprint indicator
+              if (sprintIndicator) sprintIndicator.style.display = 'block';
+              
+              // Start sprint timer for this key
+              if (!sprintTimers[key]) {
+                sprintTimers[key] = setTimeout(() => {
+                  isRunning = true;
+                  el.classList.add('sprinting');
+                  sprintCharge = 100;
+                  if (sprintProgress) sprintProgress.style.width = '100%';
+                }, SPRINT_DELAY);
+              }
+              
+              // Update sprint progress
+              const startTime = Date.now();
+              const updateProgress = () => {
+                if (moveKeys[key] && !isRunning) {
+                  const elapsed = Date.now() - startTime;
+                  const progress = Math.min(100, (elapsed / SPRINT_DELAY) * 100);
+                  if (sprintProgress) sprintProgress.style.width = progress + '%';
+                  requestAnimationFrame(updateProgress);
+                }
+              };
+              updateProgress();
+            };
+            
+            const end = (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              moveKeys[key] = false;
+              
+              // Hide sprint indicator if no keys pressed
+              if (!moveKeys.up && !moveKeys.down && !moveKeys.left && !moveKeys.right) {
+                if (sprintIndicator) sprintIndicator.style.display = 'none';
+              }
+              
+              // Clear sprint timer for this key
+              if (sprintTimers[key]) {
+                clearTimeout(sprintTimers[key]);
+                sprintTimers[key] = null;
+              }
+              
+              // Reset running if no other movement keys are pressed
+              if (!moveKeys.up && !moveKeys.down) {
+                isRunning = false;
+                el.classList.remove('sprinting');
+                sprintCharge = 0;
+                if (sprintProgress) sprintProgress.style.width = '0%';
+              }
+            };
+            
+            // Add event listeners
+            el.addEventListener('touchstart', start, { passive: false });
+            el.addEventListener('touchend', end, { passive: false });
+            el.addEventListener('touchcancel', end, { passive: false });
+            el.addEventListener('mousedown', start);
+            el.addEventListener('mouseup', end);
+            el.addEventListener('mouseleave', end);
+          };
+
+          // Setup all buttons
+          setupButton('up', 'up');
+          setupButton('down', 'down');
+          setupButton('left', 'left');
+          setupButton('right', 'right');
+
+          // Keyboard controls for testing
+          window.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+              case 'w': moveKeys.up = true; e.preventDefault(); break;
+              case 's': moveKeys.down = true; e.preventDefault(); break;
+              case 'a': moveKeys.left = true; e.preventDefault(); break;
+              case 'd': moveKeys.right = true; e.preventDefault(); break;
+              // Camera controls with arrow keys as fallback
+              case 'arrowleft': cameraRotation.y += 2; e.preventDefault(); updateCameraRotation(); break;
+              case 'arrowright': cameraRotation.y -= 2; e.preventDefault(); updateCameraRotation(); break;
+              case 'arrowup': cameraRotation.x = Math.min(30, cameraRotation.x + 2); e.preventDefault(); updateCameraRotation(); break;
+              case 'arrowdown': cameraRotation.x = Math.max(-10, cameraRotation.x - 2); e.preventDefault(); updateCameraRotation(); break;
+            }
+          });
+          
+          window.addEventListener('keyup', (e) => {
+            switch(e.key.toLowerCase()) {
+              case 'w': moveKeys.up = false; e.preventDefault(); break;
+              case 's': moveKeys.down = false; e.preventDefault(); break;
+              case 'a': moveKeys.left = false; e.preventDefault(); break;
+              case 'd': moveKeys.right = false; e.preventDefault(); break;
+            }
+            
+            // Reset running if no forward/back movement
+            if (!moveKeys.up && !moveKeys.down) {
+              isRunning = false;
+              document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('sprinting'));
+            }
+          });
+
+          // Touch controls for camera swipe
+          document.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('btn')) return; // Ignore if button press
+            isTouching = true;
+            touchStart.x = e.touches[0].clientX;
+            touchStart.y = e.touches[0].clientY;
+          }, { passive: true });
+
+          document.addEventListener('touchmove', (e) => {
+            if (!isTouching || e.target.classList.contains('btn')) return;
+            e.preventDefault();
+            
+            const touchEnd = {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY
+            };
+            
+            const deltaX = touchEnd.x - touchStart.x;
+            const deltaY = touchEnd.y - touchStart.y;
+            
+            // Apply sensitivity and update camera rotation
+            cameraRotation.y += deltaX * SENSITIVITY;
+            cameraRotation.x = Math.max(-10, Math.min(30, cameraRotation.x - deltaY * SENSITIVITY));
+            
+            // Normalize y rotation
+            cameraRotation.y = cameraRotation.y % 360;
+            
+            // Update camera rig rotation
+            updateCameraRotation();
+            
+            // Reset touch start for continuous movement
+            touchStart = touchEnd;
+          }, { passive: false });
+
+          document.addEventListener('touchend', () => {
+            isTouching = false;
+          });
+
+          // Mouse drag for camera control (for testing on desktop)
+          let isMouseDown = false;
+          let mouseStart = { x: 0, y: 0 };
+
+          document.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('btn')) return;
+            isMouseDown = true;
+            mouseStart.x = e.clientX;
+            mouseStart.y = e.clientY;
+          });
+
+          document.addEventListener('mousemove', (e) => {
+            if (!isMouseDown || e.target.classList.contains('btn')) return;
+            
+            const deltaX = e.clientX - mouseStart.x;
+            const deltaY = e.clientY - mouseStart.y;
+            
+            cameraRotation.y += deltaX * SENSITIVITY * 0.5;
+            cameraRotation.x = Math.max(-10, Math.min(30, cameraRotation.x - deltaY * SENSITIVITY * 0.5));
+            
+            cameraRotation.y = cameraRotation.y % 360;
+            
+            updateCameraRotation();
+            
+            mouseStart.x = e.clientX;
+            mouseStart.y = e.clientY;
+          });
+
+          document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+          });
+
+          // Function to update camera rotation
+          function updateCameraRotation() {
+            cameraRig.setAttribute('rotation', {
+              x: cameraRotation.x,
+              y: cameraRotation.y,
+              z: 0
+            });
+          }
+
+          // Animation validation function
+          const validateAndSetAnimation = (newAnim) => {
+            if (newAnim !== currentAnim) {
+              model.setAttribute('animation-mixer', `clip: ${newAnim}; crossFadeDuration: 0.2`);
+              currentAnim = newAnim;
+            }
+          };
+
+          // Simple collision detection with buildings
+          // This is a simplified approach - for production, use proper physics
+          function checkCollision(newPosition) {
+            // Define building positions and sizes (approximate based on the model)
+            // These are example positions - you'll need to adjust based on your actual building locations
+            const buildingZones = [
+              { x: [-10, 10], z: [-15, -5] },  // Example building zone 1
+              { x: [15, 25], z: [10, 20] },    // Example building zone 2
+              { x: [-25, -15], z: [15, 25] },  // Example building zone 3
+              { x: [-5, 5], z: [20, 30] },     // Example building zone 4
+            ];
+            
+            // Add buffer around buildings (player radius)
+            const buffer = 1.5;
+            
+            for (let zone of buildingZones) {
+              if (newPosition.x > zone.x[0] - buffer && 
+                  newPosition.x < zone.x[1] + buffer && 
+                  newPosition.z > zone.z[0] - buffer && 
+                  newPosition.z < zone.z[1] + buffer) {
+                return true; // Collision detected
+              }
+            }
+            
+            // General boundary
+            if (Math.abs(newPosition.x) > BOUNDARY || Math.abs(newPosition.z) > BOUNDARY) {
+              return true;
+            }
+            
+            return false;
+          }
+
+          // Main game loop
+          function tick() {
+            if (!rig || !model) return;
+            
+            const now = performance.now();
+            const delta = Math.min(32, now - lastTime) / 16;
+            lastTime = now;
+            
+            try {
+              // Get current rotation
+              let rotation = rig.getAttribute('rotation');
+              if (!rotation) rotation = { x: 0, y: 0, z: 0 };
+              
+              // Handle player rotation (left/right buttons)
+              if (moveKeys.left) rotation.y += 2.5 * delta;
+              if (moveKeys.right) rotation.y -= 2.5 * delta;
+              
+              rotation.y = rotation.y % 360;
+              if (rotation.y < 0) rotation.y += 360;
+              
+              rig.setAttribute('rotation', rotation);
+              
+              // Handle position (forward/backward)
+              let position = rig.getAttribute('position');
+              if (!position) position = { x: 0, y: 0.1, z: 0 };
+              
+              const baseSpeed = 0.1; // Increased speed for better movement
+              const runSpeed = 0.2;
+              let speed = (isRunning ? runSpeed : baseSpeed) * delta;
+              
+              let targetAnim = 'idle';
+              let moved = false;
+              
+              if (moveKeys.up || moveKeys.down) {
+                const direction = moveKeys.up ? 1 : -1;
+                const angleRad = rotation.y * (Math.PI / 180);
+                
+                // Calculate new position
+                let newX = position.x - Math.sin(angleRad) * speed * direction;
+                let newZ = position.z - Math.cos(angleRad) * speed * direction;
+                
+                // Check collision before applying movement
+                if (!checkCollision({ x: newX, z: newZ })) {
+                  position.x = newX;
+                  position.z = newZ;
+                  moved = true;
+                }
+                
+                // Set animation based on direction and running state
+                if (direction === 1) {
+                  targetAnim = isRunning ? 'run-forward' : 'walk-forward';
+                } else {
+                  targetAnim = isRunning ? 'run-backwards' : 'walk-backwards';
+                }
+              }
+              
+              // Always keep Y position fixed to prevent sinking
+              position.y = 0.1;
+              
+              // Update position
+              rig.setAttribute('position', position);
+              
+              // Update animation only if moved
+              if (moved) {
+                validateAndSetAnimation(targetAnim);
+              } else {
+                validateAndSetAnimation('idle');
+              }
+              
+            } catch (error) {
+              console.error('Error in game loop:', error);
+            }
+            
+            requestAnimationFrame(tick);
+          }
+
+          // Start the game loop
+          tick();
+
+          // Handle model loading errors
+          model.addEventListener('model-error', (error) => {
+            console.error('Failed to load player model:', error);
+            model.setAttribute('geometry', 'primitive: capsule; height: 2; radius: 0.5');
+            model.setAttribute('material', 'color: #4CAF50');
+          });
+
+          console.log('Controls initialized successfully');
+        });
+      })();
+    </script>
+  </body>
+</html>
