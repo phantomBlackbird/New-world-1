@@ -3,85 +3,78 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Subrural - Fixed Version with Animated Ground</title>
+    <title>Subrural - Joystick Controls & Cinematic Camera</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.9.0/dist/nipplejs.min.js"></script>
     
     <style>
       body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
       
-      .controller {
-        position: absolute; 
-        bottom: 40px; 
-        width: 220px; 
-        height: 220px; 
+      /* Joystick container */
+      #joystick-container {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        width: 150px;
+        height: 150px;
         z-index: 2000;
-        display: grid; 
-        gap: 10px; 
         pointer-events: auto;
       }
       
-      #move-pad { 
-        left: 20px; 
-        grid-template-areas: 
-          ". up ." 
-          "left . right" 
-          ". down ."; 
-      }
-      
-      .btn {
-        width: 70px; 
-        height: 70px; 
-        background: rgba(0, 0, 0, 0.6); 
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        font-size: 14px; 
-        font-weight: bold; 
-        color: white; 
-        user-select: none; 
-        touch-action: none;
-        backdrop-filter: blur(4px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        transition: all 0.1s ease;
-      }
-      
-      .btn:active { 
-        background: rgba(255, 255, 255, 0.9); 
-        color: black; 
-        transform: scale(0.95);
-      }
-      
-      .btn.sprinting {
-        background: rgba(255, 100, 100, 0.8);
-        border-color: #ff0;
-      }
-      
-      #up { grid-area: up; } 
-      #left { grid-area: left; } 
-      #right { grid-area: right; } 
-      #down { grid-area: down; }
-      
-      #sprint-indicator {
+      /* Sprint button */
+      #sprint-btn {
         position: absolute;
-        bottom: 280px;
-        left: 50px;
-        width: 100px;
-        height: 10px;
+        bottom: 40px;
+        right: 40px;
+        width: 80px;
+        height: 80px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 3px solid rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        transition: all 0.2s ease;
+        pointer-events: auto;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      #sprint-btn.active {
+        background: rgba(255, 100, 100, 0.9);
+        border-color: #ff0;
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(255, 100, 100, 0.8);
+      }
+      
+      /* Sprint progress indicator */
+      #sprint-progress-container {
+        position: absolute;
+        bottom: 130px;
+        right: 40px;
+        width: 80px;
+        height: 8px;
         background: rgba(0, 0, 0, 0.5);
-        border-radius: 5px;
+        border-radius: 4px;
         z-index: 2001;
         overflow: hidden;
-        display: none;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
       
       #sprint-progress {
         width: 0%;
         height: 100%;
-        background: #ffaa00;
+        background: linear-gradient(90deg, #ffaa00, #ff5500);
         transition: width 0.1s linear;
+        border-radius: 4px;
       }
       
       /* Camera control instructions */
@@ -91,25 +84,32 @@
         right: 20px;
         background: rgba(0, 0, 0, 0.6);
         color: white;
-        padding: 10px;
-        border-radius: 5px;
+        padding: 15px;
+        border-radius: 10px;
         font-size: 14px;
         z-index: 2000;
         pointer-events: none;
         backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       }
       
-      /* AR/VR buttons */
-      .mode-buttons {
+      .instructions span {
+        color: #ffaa00;
+        font-weight: bold;
+      }
+      
+      /* Action buttons container (for future use) */
+      #action-buttons {
         position: absolute;
         bottom: 40px;
-        right: 20px;
+        right: 140px;
         display: flex;
-        gap: 10px;
+        gap: 15px;
         z-index: 2000;
       }
       
-      .mode-btn {
+      .action-btn {
         width: 60px;
         height: 60px;
         background: rgba(0, 0, 0, 0.6);
@@ -118,55 +118,58 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
-        font-weight: bold;
+        font-size: 20px;
         color: white;
         backdrop-filter: blur(4px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      }
+      
+      .action-btn:active {
+        transform: scale(0.9);
+        background: rgba(255, 255, 255, 0.3);
       }
       
       @media (max-width: 400px) {
-        .controller { transform: scale(0.8); left: 0; bottom: 20px; }
-        #sprint-indicator { left: 30px; bottom: 240px; }
-        .instructions { font-size: 12px; top: 10px; right: 10px; }
-        .mode-buttons { transform: scale(0.8); right: 10px; bottom: 20px; }
+        #joystick-container { transform: scale(0.8); left: 20px; bottom: 20px; }
+        #sprint-btn { transform: scale(0.8); right: 20px; bottom: 20px; }
+        #sprint-progress-container { right: 20px; bottom: 110px; }
+        .instructions { font-size: 12px; padding: 10px; }
+        #action-buttons { right: 120px; transform: scale(0.8); }
       }
     </style>
   </head>
   <body>
-    <!-- Sprint progress indicator -->
-    <div id="sprint-indicator">
+    <!-- Joystick container -->
+    <div id="joystick-container"></div>
+    
+    <!-- Sprint button -->
+    <div id="sprint-btn">SPRINT</div>
+    
+    <!-- Sprint progress -->
+    <div id="sprint-progress-container">
       <div id="sprint-progress"></div>
+    </div>
+    
+    <!-- Action buttons (placeholder for future) -->
+    <div id="action-buttons">
+      <div class="action-btn">⚔️</div>
+      <div class="action-btn">🛡️</div>
     </div>
 
     <!-- Camera control instructions -->
     <div class="instructions">
-      Swipe: Left/Right = Rotate View<br>
-      Swipe: Up/Down = Tilt Camera
+      <span>👆</span> Drag screen to rotate camera<br>
+      <span>🕹️</span> Left joystick to move<br>
+      <span>⚡</span> Hold SPRINT to run
     </div>
 
-    <!-- Movement controls -->
-    <div id="move-pad" class="controller">
-      <div class="btn" id="up">FWD</div>
-      <div class="btn" id="left">←</div>
-      <div class="btn" id="right">→</div>
-      <div class="btn" id="down">BWD</div>
-    </div>
-    
-    <!-- AR/VR buttons -->
-    <div class="mode-buttons">
-      <div class="mode-btn">AR</div>
-      <div class="mode-btn">VR</div>
-    </div>
-
-    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true" vr-mode-ui="enabled: true">
+    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true" vr-mode-ui="enabled: true">
       <a-assets>
         <a-asset-item id="subrural" src="Subrural.glb"></a-asset-item>
         <a-asset-item id="player" src="Player.glb"></a-asset-item>
         <a-asset-item id="ground" src="Ground.glb"></a-asset-item>
-        
-        <!-- Fallback colors if models don't load -->
-        <img id="player-texture" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
       </a-assets>
 
       <!-- Environment -->
@@ -187,39 +190,32 @@
 
       <!-- Player Rig -->
       <a-entity id="player-rig" 
-                position="0 1.5 0"> <!-- Raised starting position -->
+                position="0 1.5 0">
         
-        <!-- Primary Player Model (attempts to load gltf) -->
+        <!-- Player Model - 3x bigger than before (0.008 * 3 = 0.024) -->
         <a-entity id="player-model" 
                   gltf-model="#player" 
-                  scale="0.0062 0.0062 0.00862" <!-- Larger scale for visibility -->
+                  scale="0.024 0.024 0.024"
                   rotation="0 0 0"
                   visible="true"
                   animation-mixer="clip: idle; crossFadeDuration: 0.2">
         </a-entity>
         
-        <!-- FALLBACK PLAYER - This will be visible if the gltf doesn't load -->
+        <!-- Fallback player (only shows if gltf fails) -->
         <a-entity id="player-fallback" visible="false">
-          <!-- Body (green) -->
           <a-sphere color="#4CAF50" radius="0.8" position="0 1.2 0"></a-sphere>
-          <!-- Head (yellow) -->
           <a-sphere color="#FFC107" radius="0.4" position="0 2.2 0"></a-sphere>
-          <!-- Arms -->
           <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="-0.9 1.6 0" rotation="0 0 20"></a-cylinder>
           <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="0.9 1.6 0" rotation="0 0 -20"></a-cylinder>
-          <!-- Legs -->
           <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="-0.4 0.6 0"></a-cylinder>
           <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="0.4 0.6 0"></a-cylinder>
-          <!-- Eyes (white) -->
-          <a-sphere color="white" radius="0.1" position="-0.2 2.3 0.3"></a-sphere>
-          <a-sphere color="white" radius="0.1" position="0.2 2.3 0.3"></a-sphere>
-          <!-- Pupils (black) -->
-          <a-sphere color="black" radius="0.05" position="-0.2 2.3 0.4"></a-sphere>
-          <a-sphere color="black" radius="0.05" position="0.2 2.3 0.4"></a-sphere>
         </a-entity>
 
-        <!-- Camera positioned higher behind the player -->
-        <a-entity id="camera-rig" position="0 5 8" rotation="0 180 0"> <!-- Higher and further back -->
+        <!-- CINEMATIC THIRD-PERSON CAMERA -->
+        <!-- Camera rig that follows player with smooth cinematic positioning -->
+        <a-entity id="camera-rig" 
+                  position="0 6 12"  <!-- Height: 6, Distance: 12 -->
+                  rotation="0 180 0">
           <a-entity id="camera" 
                     camera 
                     look-controls="pointerLockEnabled: false; enabled: false"
@@ -228,181 +224,142 @@
         </a-entity>
       </a-entity>
 
-      <!-- Lighting -->
-      <a-entity light="type: ambient; intensity: 1.2"></a-entity> <!-- Brighter ambient -->
+      <!-- Cinematic Lighting -->
+      <a-entity light="type: ambient; intensity: 1.0"></a-entity>
+      
+      <!-- Key light (main illumination) -->
       <a-entity light="type: directional; intensity: 1.2; castShadow: true" 
-                position="5 15 5" 
-                target="0 1 0">
+                position="5 15 10" 
+                target="0 1.5 0">
       </a-entity>
       
-      <!-- Add a second light from behind to illuminate player back -->
-      <a-entity light="type: directional; intensity: 0.8; color: #FFFFFF" 
-                position="-5 10 -5" 
-                target="0 1 0">
+      <!-- Fill light (from behind) -->
+      <a-entity light="type: directional; intensity: 0.6; color: #B0C4DE" 
+                position="-5 10 -10" 
+                target="0 1.5 0">
       </a-entity>
+      
+      <!-- Rim light (for edge highlighting) -->
+      <a-entity light="type: directional; intensity: 0.8; color: #FFFACD" 
+                position="0 8 -15" 
+                target="0 1.5 0">
+      </a-entity>
+      
+      <!-- Add some atmospheric fog for depth -->
+      <a-entity fog="type: exponential; color: #87CEEB; density: 0.015"></a-entity>
     </a-scene>
 
     <script>
       (function() {
-        // Wait for scene to load
         const scene = document.querySelector('a-scene');
-        if (!scene) {
-          console.error('Scene not found');
-          return;
-        }
+        if (!scene) return;
 
         scene.addEventListener('loaded', () => {
-          console.log('Scene loaded, initializing controls...');
+          console.log('Scene loaded, initializing joystick controls...');
           
-          // Get references with null checks
           const rig = document.getElementById('player-rig');
           const model = document.getElementById('player-model');
           const fallback = document.getElementById('player-fallback');
           const cameraRig = document.getElementById('camera-rig');
+          const sprintBtn = document.getElementById('sprint-btn');
           const sprintProgress = document.getElementById('sprint-progress');
-          const sprintIndicator = document.getElementById('sprint-indicator');
           
-          if (!rig || !model || !cameraRig || !fallback) {
-            console.error('Required elements not found');
-            return;
-          }
+          if (!rig || !model || !cameraRig) return;
 
-          // FORCE FALLBACK FOR TESTING - Comment this out if you want to try loading the actual model
-          // Uncomment the line below to force using the fallback character
-          // showFallbackCharacter();
-          
           // Movement state
-          let moveKeys = { up: false, down: false, left: false, right: false };
-          let isRunning = false;
-          let sprintCharge = 0;
-          const SPRINT_DELAY = 3000;
-          const BOUNDARY = 45;
+          let moveDirection = { x: 0, y: 0 }; // Joystick input (-1 to 1)
+          let isSprinting = false;
+          let sprintCharge = 100;
+          let canSprint = true;
+          const SPRINT_DRAIN_RATE = 25; // % per second
+          const SPRINT_RECHARGE_RATE = 15; // % per second
           
-          // Camera control state
-          let cameraRotation = { x: 25, y: 180 }; // Increased tilt
+          // Camera state
+          let cameraRotation = { x: 25, y: 180 }; // Cinematic angle
           let touchStart = { x: 0, y: 0 };
           let isTouching = false;
-          const SENSITIVITY = 0.5;
+          const CAMERA_SENSITIVITY = 0.3;
           
-          let sprintTimers = { up: null, down: null, left: null, right: null };
-          let lastTime = performance.now();
+          // Animation state
           let currentAnim = 'idle';
           let modelLoaded = false;
           
-          // Function to show fallback character and hide gltf model
-          function showFallbackCharacter() {
-            console.log('Showing fallback character');
-            model.setAttribute('visible', 'false');
-            fallback.setAttribute('visible', 'true');
-            modelLoaded = true; // Consider it loaded for animation purposes
-          }
+          // Frame timing
+          let lastTime = performance.now();
           
-          // Button setup
-          const setupButton = (id, key) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            
-            const start = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              moveKeys[key] = true;
-              
-              if (sprintIndicator) sprintIndicator.style.display = 'block';
-              
-              if (!sprintTimers[key]) {
-                sprintTimers[key] = setTimeout(() => {
-                  isRunning = true;
-                  el.classList.add('sprinting');
-                  sprintCharge = 100;
-                  if (sprintProgress) sprintProgress.style.width = '100%';
-                }, SPRINT_DELAY);
-              }
-              
-              const startTime = Date.now();
-              const updateProgress = () => {
-                if (moveKeys[key] && !isRunning) {
-                  const elapsed = Date.now() - startTime;
-                  const progress = Math.min(100, (elapsed / SPRINT_DELAY) * 100);
-                  if (sprintProgress) sprintProgress.style.width = progress + '%';
-                  requestAnimationFrame(updateProgress);
-                }
-              };
-              updateProgress();
-            };
-            
-            const end = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              moveKeys[key] = false;
-              
-              if (!moveKeys.up && !moveKeys.down && !moveKeys.left && !moveKeys.right) {
-                if (sprintIndicator) sprintIndicator.style.display = 'none';
-              }
-              
-              if (sprintTimers[key]) {
-                clearTimeout(sprintTimers[key]);
-                sprintTimers[key] = null;
-              }
-              
-              if (!moveKeys.up && !moveKeys.down) {
-                isRunning = false;
-                el.classList.remove('sprinting');
-                sprintCharge = 0;
-                if (sprintProgress) sprintProgress.style.width = '0%';
-              }
-            };
-            
-            el.addEventListener('touchstart', start, { passive: false });
-            el.addEventListener('touchend', end, { passive: false });
-            el.addEventListener('touchcancel', end, { passive: false });
-            el.addEventListener('mousedown', start);
-            el.addEventListener('mouseup', end);
-            el.addEventListener('mouseleave', end);
-          };
+          // BOUNDARY
+          const BOUNDARY = 45;
 
-          setupButton('up', 'up');
-          setupButton('down', 'down');
-          setupButton('left', 'left');
-          setupButton('right', 'right');
-
-          // Keyboard controls
-          window.addEventListener('keydown', (e) => {
-            switch(e.key.toLowerCase()) {
-              case 'w': moveKeys.up = true; e.preventDefault(); break;
-              case 's': moveKeys.down = true; e.preventDefault(); break;
-              case 'a': moveKeys.left = true; e.preventDefault(); break;
-              case 'd': moveKeys.right = true; e.preventDefault(); break;
-              case 'arrowleft': cameraRotation.y += 2; updateCameraRotation(); e.preventDefault(); break;
-              case 'arrowright': cameraRotation.y -= 2; updateCameraRotation(); e.preventDefault(); break;
-              case 'arrowup': cameraRotation.x = Math.min(45, cameraRotation.x + 2); updateCameraRotation(); e.preventDefault(); break;
-              case 'arrowdown': cameraRotation.x = Math.max(5, cameraRotation.x - 2); updateCameraRotation(); e.preventDefault(); break;
-            }
+          // Initialize joystick
+          const joystick = nipplejs.create({
+            zone: document.getElementById('joystick-container'),
+            mode: 'static',
+            position: { left: '50%', top: '50%' },
+            color: 'white',
+            size: 120,
+            lockY: false,
+            lockX: false,
+            restOpacity: 0.7,
+            fadeTime: 100
           });
-          
-          window.addEventListener('keyup', (e) => {
-            switch(e.key.toLowerCase()) {
-              case 'w': moveKeys.up = false; e.preventDefault(); break;
-              case 's': moveKeys.down = false; e.preventDefault(); break;
-              case 'a': moveKeys.left = false; e.preventDefault(); break;
-              case 'd': moveKeys.right = false; e.preventDefault(); break;
-            }
-            
-            if (!moveKeys.up && !moveKeys.down) {
-              isRunning = false;
-              document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('sprinting'));
+
+          // Joystick events
+          joystick.on('move', (evt, nipple) => {
+            const vector = nipple.vector;
+            // Normalize and invert Y if needed
+            moveDirection.x = vector.x;
+            moveDirection.y = -vector.y; // Invert so up = forward
+          });
+
+          joystick.on('end', () => {
+            moveDirection = { x: 0, y: 0 };
+          });
+
+          // Sprint button events
+          sprintBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (canSprint && sprintCharge > 0) {
+              isSprinting = true;
+              sprintBtn.classList.add('active');
             }
           });
 
-          // Touch controls for camera
+          sprintBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isSprinting = false;
+            sprintBtn.classList.remove('active');
+          });
+
+          sprintBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (canSprint && sprintCharge > 0) {
+              isSprinting = true;
+              sprintBtn.classList.add('active');
+            }
+          });
+
+          sprintBtn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            isSprinting = false;
+            sprintBtn.classList.remove('active');
+          });
+
+          sprintBtn.addEventListener('mouseleave', (e) => {
+            e.preventDefault();
+            isSprinting = false;
+            sprintBtn.classList.remove('active');
+          });
+
+          // Camera touch controls
           document.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('btn')) return;
+            if (e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
             isTouching = true;
             touchStart.x = e.touches[0].clientX;
             touchStart.y = e.touches[0].clientY;
           }, { passive: true });
 
           document.addEventListener('touchmove', (e) => {
-            if (!isTouching || e.target.classList.contains('btn')) return;
+            if (!isTouching || e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
             e.preventDefault();
             
             const touchEnd = {
@@ -413,8 +370,9 @@
             const deltaX = touchEnd.x - touchStart.x;
             const deltaY = touchEnd.y - touchStart.y;
             
-            cameraRotation.y += deltaX * SENSITIVITY;
-            cameraRotation.x = Math.max(5, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY));
+            // Update camera rotation with cinematic limits
+            cameraRotation.y += deltaX * CAMERA_SENSITIVITY;
+            cameraRotation.x = Math.max(15, Math.min(45, cameraRotation.x - deltaY * CAMERA_SENSITIVITY));
             cameraRotation.y = cameraRotation.y % 360;
             
             updateCameraRotation();
@@ -425,25 +383,25 @@
             isTouching = false;
           });
 
-          // Mouse drag for camera
+          // Mouse drag for camera (desktop)
           let isMouseDown = false;
           let mouseStart = { x: 0, y: 0 };
 
           document.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('btn')) return;
+            if (e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
             isMouseDown = true;
             mouseStart.x = e.clientX;
             mouseStart.y = e.clientY;
           });
 
           document.addEventListener('mousemove', (e) => {
-            if (!isMouseDown || e.target.classList.contains('btn')) return;
+            if (!isMouseDown || e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
             
             const deltaX = e.clientX - mouseStart.x;
             const deltaY = e.clientY - mouseStart.y;
             
-            cameraRotation.y += deltaX * SENSITIVITY * 0.5;
-            cameraRotation.x = Math.max(5, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY * 0.5));
+            cameraRotation.y += deltaX * CAMERA_SENSITIVITY * 0.3;
+            cameraRotation.x = Math.max(15, Math.min(45, cameraRotation.x - deltaY * CAMERA_SENSITIVITY * 0.3));
             cameraRotation.y = cameraRotation.y % 360;
             
             updateCameraRotation();
@@ -463,18 +421,7 @@
             });
           }
 
-          // Animation function (simplified for fallback)
-          const updateAnimation = (newAnim) => {
-            if (newAnim !== currentAnim) {
-              currentAnim = newAnim;
-              console.log('Animation:', newAnim);
-              
-              // If using fallback, we could animate the limbs here
-              // For now, just log
-            }
-          };
-
-          // Simple collision detection
+          // Collision detection
           function checkCollision(newPosition) {
             const buildingZones = [
               { x: [-10, 10], z: [-15, -5] },
@@ -483,7 +430,7 @@
               { x: [-5, 5], z: [20, 30] },
             ];
             
-            const buffer = 2.0;
+            const buffer = 2.5;
             
             for (let zone of buildingZones) {
               if (newPosition.x > zone.x[0] - buffer && 
@@ -494,100 +441,131 @@
               }
             }
             
-            if (Math.abs(newPosition.x) > BOUNDARY || Math.abs(newPosition.z) > BOUNDARY) {
-              return true;
-            }
+            return Math.abs(newPosition.x) > BOUNDARY || Math.abs(newPosition.z) > BOUNDARY;
+          }
+
+          // Animation update
+          function updateAnimation(animName) {
+            if (!modelLoaded) return;
             
-            return false;
+            if (animName !== currentAnim) {
+              model.setAttribute('animation-mixer', `clip: ${animName}; crossFadeDuration: 0.2`);
+              currentAnim = animName;
+            }
           }
 
           // Main game loop
           function tick() {
-            if (!rig) return;
-            
             const now = performance.now();
-            const delta = Math.min(32, now - lastTime) / 16;
+            const delta = Math.min(32, now - lastTime) / 1000; // Convert to seconds
             lastTime = now;
             
             try {
+              // Update sprint
+              if (isSprinting && sprintCharge > 0) {
+                sprintCharge = Math.max(0, sprintCharge - SPRINT_DRAIN_RATE * delta);
+                if (sprintCharge <= 0) {
+                  isSprinting = false;
+                  sprintBtn.classList.remove('active');
+                  canSprint = false;
+                  setTimeout(() => { canSprint = true; }, 500);
+                }
+              } else {
+                sprintCharge = Math.min(100, sprintCharge + SPRINT_RECHARGE_RATE * delta);
+              }
+              
+              sprintProgress.style.width = sprintCharge + '%';
+              
+              // Get current rotation and position
               let rotation = rig.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
-              
-              if (moveKeys.left) rotation.y += 2.5 * delta;
-              if (moveKeys.right) rotation.y -= 2.5 * delta;
-              
-              rotation.y = rotation.y % 360;
-              if (rotation.y < 0) rotation.y += 360;
-              
-              rig.setAttribute('rotation', rotation);
-              
               let position = rig.getAttribute('position') || { x: 0, y: 1.5, z: 0 };
               
-              const baseSpeed = 0.15;
-              const runSpeed = 0.3;
-              let speed = (isRunning ? runSpeed : baseSpeed) * delta;
-              
-              let targetAnim = 'idle';
-              let moved = false;
-              
-              if (moveKeys.up || moveKeys.down) {
-                const direction = moveKeys.up ? 1 : -1;
-                const angleRad = rotation.y * (Math.PI / 180);
+              // Calculate movement from joystick
+              if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
+                // Calculate speed
+                const baseSpeed = 2.5; // Units per second
+                const sprintSpeed = 5.0;
+                const speed = (isSprinting && sprintCharge > 0 ? sprintSpeed : baseSpeed) * delta;
                 
-                let newX = position.x - Math.sin(angleRad) * speed * direction;
-                let newZ = position.z - Math.cos(angleRad) * speed * direction;
+                // Get camera direction for movement relative to camera view
+                const cameraAngle = (cameraRotation.y * Math.PI) / 180;
                 
+                // Calculate movement directions based on camera orientation
+                // Forward/backward relative to camera
+                const forwardX = -Math.sin(cameraAngle);
+                const forwardZ = -Math.cos(cameraAngle);
+                
+                // Right/left relative to camera
+                const rightX = Math.cos(cameraAngle);
+                const rightZ = -Math.sin(cameraAngle);
+                
+                // Combine joystick input with camera directions
+                let moveX = (forwardX * moveDirection.y + rightX * moveDirection.x) * speed;
+                let moveZ = (forwardZ * moveDirection.y + rightZ * moveDirection.x) * speed;
+                
+                // Calculate new position
+                let newX = position.x + moveX;
+                let newZ = position.z + moveZ;
+                
+                // Check collision
                 if (!checkCollision({ x: newX, z: newZ })) {
                   position.x = newX;
                   position.z = newZ;
-                  moved = true;
                 }
                 
-                targetAnim = direction === 1 
-                  ? (isRunning ? 'run-forward' : 'walk-forward')
-                  : (isRunning ? 'run-backwards' : 'walk-backwards');
+                // Rotate player to face movement direction
+                if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
+                  const moveAngle = Math.atan2(moveX, moveZ);
+                  rotation.y = (moveAngle * 180) / Math.PI;
+                }
+                
+                // Determine animation
+                const speed magnitude = Math.sqrt(moveDirection.x * moveDirection.x + moveDirection.y * moveDirection.y);
+                if (magnitude > 0.5) {
+                  updateAnimation(isSprinting ? 'run-forward' : 'walk-forward');
+                } else {
+                  updateAnimation('walk-forward');
+                }
+              } else {
+                updateAnimation('idle');
               }
               
-              position.y = 1.5; // Keep fixed height
+              // Keep Y position fixed
+              position.y = 1.5;
+              
+              // Update rig
+              rig.setAttribute('rotation', rotation);
               rig.setAttribute('position', position);
               
-              updateAnimation(moved ? targetAnim : 'idle');
-              
             } catch (error) {
-              console.error('Error in game loop:', error);
+              console.error('Error:', error);
             }
             
             requestAnimationFrame(tick);
           }
 
-          tick();
-
           // Handle model loading
           model.addEventListener('model-loaded', () => {
-            console.log('Player model loaded successfully - keeping gltf model');
+            console.log('Player model loaded');
             model.setAttribute('visible', 'true');
             fallback.setAttribute('visible', 'false');
             modelLoaded = true;
           });
 
-          model.addEventListener('model-error', (error) => {
-            console.error('Failed to load player model, using fallback:', error);
-            showFallbackCharacter();
+          model.addEventListener('model-error', () => {
+            console.log('Using fallback model');
+            model.setAttribute('visible', 'false');
+            fallback.setAttribute('visible', 'true');
+            modelLoaded = true;
           });
 
-          // Set a timeout to show fallback if model takes too long to load
-          setTimeout(() => {
-            if (!modelLoaded) {
-              console.log('Model load timeout - using fallback');
-              showFallbackCharacter();
-            }
-          }, 3000);
-
-          // Initial camera rotation
+          // Start game loop
+          tick();
           updateCameraRotation();
           
-          console.log('Controls initialized');
+          console.log('Joystick controls initialized');
         });
       })();
     </script>
   </body>
-</html>
+            </html>
