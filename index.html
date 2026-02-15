@@ -99,10 +99,37 @@
         backdrop-filter: blur(4px);
       }
       
+      /* AR/VR buttons */
+      .mode-buttons {
+        position: absolute;
+        bottom: 40px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 2000;
+      }
+      
+      .mode-btn {
+        width: 60px;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      
       @media (max-width: 400px) {
         .controller { transform: scale(0.8); left: 0; bottom: 20px; }
         #sprint-indicator { left: 30px; bottom: 240px; }
         .instructions { font-size: 12px; top: 10px; right: 10px; }
+        .mode-buttons { transform: scale(0.8); right: 10px; bottom: 20px; }
       }
     </style>
   </head>
@@ -125,12 +152,21 @@
       <div class="btn" id="right">→</div>
       <div class="btn" id="down">BWD</div>
     </div>
+    
+    <!-- AR/VR buttons -->
+    <div class="mode-buttons">
+      <div class="mode-btn">AR</div>
+      <div class="mode-btn">VR</div>
+    </div>
 
-    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true">
+    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true" vr-mode-ui="enabled: true">
       <a-assets>
         <a-asset-item id="subrural" src="Subrural.glb"></a-asset-item>
         <a-asset-item id="player" src="Player.glb"></a-asset-item>
         <a-asset-item id="ground" src="Ground.glb"></a-asset-item>
+        
+        <!-- Fallback colors if models don't load -->
+        <img id="player-texture" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
       </a-assets>
 
       <!-- Environment -->
@@ -149,20 +185,41 @@
       
       <a-sky color="#87CEEB"></a-sky>
 
-      <!-- Player Rig - NO physics body to prevent sinking -->
+      <!-- Player Rig -->
       <a-entity id="player-rig" 
-                position="0 1 0"> <!-- Raised starting position -->
+                position="0 1.5 0"> <!-- Raised starting position -->
         
-        <!-- Player Model with animation mixer - Increased scale to make visible -->
+        <!-- Primary Player Model (attempts to load gltf) -->
         <a-entity id="player-model" 
                   gltf-model="#player" 
-                  scale="0.005 0.005 0.005" <!-- Increased from 0.0023 to 0.005 for better visibility -->
+                  scale="0.008 0.008 0.008" <!-- Larger scale for visibility -->
                   rotation="0 0 0"
+                  visible="true"
                   animation-mixer="clip: idle; crossFadeDuration: 0.2">
+        </a-entity>
+        
+        <!-- FALLBACK PLAYER - This will be visible if the gltf doesn't load -->
+        <a-entity id="player-fallback" visible="false">
+          <!-- Body (green) -->
+          <a-sphere color="#4CAF50" radius="0.8" position="0 1.2 0"></a-sphere>
+          <!-- Head (yellow) -->
+          <a-sphere color="#FFC107" radius="0.4" position="0 2.2 0"></a-sphere>
+          <!-- Arms -->
+          <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="-0.9 1.6 0" rotation="0 0 20"></a-cylinder>
+          <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="0.9 1.6 0" rotation="0 0 -20"></a-cylinder>
+          <!-- Legs -->
+          <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="-0.4 0.6 0"></a-cylinder>
+          <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="0.4 0.6 0"></a-cylinder>
+          <!-- Eyes (white) -->
+          <a-sphere color="white" radius="0.1" position="-0.2 2.3 0.3"></a-sphere>
+          <a-sphere color="white" radius="0.1" position="0.2 2.3 0.3"></a-sphere>
+          <!-- Pupils (black) -->
+          <a-sphere color="black" radius="0.05" position="-0.2 2.3 0.4"></a-sphere>
+          <a-sphere color="black" radius="0.05" position="0.2 2.3 0.4"></a-sphere>
         </a-entity>
 
         <!-- Camera positioned higher behind the player -->
-        <a-entity id="camera-rig" position="0 4.5 6" rotation="0 180 0"> <!-- Raised from 2.2 to 4.5, moved back from 3.5 to 6 -->
+        <a-entity id="camera-rig" position="0 5 8" rotation="0 180 0"> <!-- Higher and further back -->
           <a-entity id="camera" 
                     camera 
                     look-controls="pointerLockEnabled: false; enabled: false"
@@ -172,15 +229,16 @@
       </a-entity>
 
       <!-- Lighting -->
-      <a-entity light="type: ambient; intensity: 0.8"></a-entity>
-      <a-entity light="type: directional; intensity: 0.8; castShadow: true" 
-                position="5 10 5" 
-                target="0 0 0">
+      <a-entity light="type: ambient; intensity: 1.2"></a-entity> <!-- Brighter ambient -->
+      <a-entity light="type: directional; intensity: 1.2; castShadow: true" 
+                position="5 15 5" 
+                target="0 1 0">
       </a-entity>
       
-      <!-- Temporary debug helper - adds a red cube at player position to verify player exists -->
-      <a-entity position="0 1 0">
-        <a-sphere color="red" radius="0.5" visible="false"></a-sphere> <!-- Hidden by default, set to true for debugging -->
+      <!-- Add a second light from behind to illuminate player back -->
+      <a-entity light="type: directional; intensity: 0.8; color: #FFFFFF" 
+                position="-5 10 -5" 
+                target="0 1 0">
       </a-entity>
     </a-scene>
 
@@ -199,63 +257,58 @@
           // Get references with null checks
           const rig = document.getElementById('player-rig');
           const model = document.getElementById('player-model');
+          const fallback = document.getElementById('player-fallback');
           const cameraRig = document.getElementById('camera-rig');
           const sprintProgress = document.getElementById('sprint-progress');
           const sprintIndicator = document.getElementById('sprint-indicator');
           
-          if (!rig || !model || !cameraRig) {
+          if (!rig || !model || !cameraRig || !fallback) {
             console.error('Required elements not found');
             return;
           }
 
-          // Log to confirm elements are found
-          console.log('Player rig found:', rig);
-          console.log('Player model found:', model);
-          console.log('Camera rig found:', cameraRig);
-
+          // FORCE FALLBACK FOR TESTING - Comment this out if you want to try loading the actual model
+          // Uncomment the line below to force using the fallback character
+          // showFallbackCharacter();
+          
           // Movement state
           let moveKeys = { up: false, down: false, left: false, right: false };
           let isRunning = false;
           let sprintCharge = 0;
-          const SPRINT_DELAY = 3000; // 3 seconds
-          const BOUNDARY = 45; // Reduced boundary for better collision with buildings
+          const SPRINT_DELAY = 3000;
+          const BOUNDARY = 45;
           
-          // Camera control state for swipe
-          let cameraRotation = { x: 20, y: 180 }; // Increased initial tilt to see player better
+          // Camera control state
+          let cameraRotation = { x: 25, y: 180 }; // Increased tilt
           let touchStart = { x: 0, y: 0 };
           let isTouching = false;
           const SENSITIVITY = 0.5;
           
-          // Sprint timers per key
           let sprintTimers = { up: null, down: null, left: null, right: null };
-          
-          // Frame timing for smooth movement
           let lastTime = performance.now();
-          
-          // Animation state tracking
           let currentAnim = 'idle';
-          
-          // Flag to check if model loaded
           let modelLoaded = false;
           
-          // Button setup function with improved touch handling
+          // Function to show fallback character and hide gltf model
+          function showFallbackCharacter() {
+            console.log('Showing fallback character');
+            model.setAttribute('visible', 'false');
+            fallback.setAttribute('visible', 'true');
+            modelLoaded = true; // Consider it loaded for animation purposes
+          }
+          
+          // Button setup
           const setupButton = (id, key) => {
             const el = document.getElementById(id);
-            if (!el) {
-              console.error(`Button ${id} not found`);
-              return;
-            }
+            if (!el) return;
             
             const start = (e) => {
               e.preventDefault();
               e.stopPropagation();
               moveKeys[key] = true;
-              console.log(`Button ${key} pressed`); // Debug log
               
-              // Show sprint indicator
               if (sprintIndicator) sprintIndicator.style.display = 'block';
               
-              // Start sprint timer for this key
               if (!sprintTimers[key]) {
                 sprintTimers[key] = setTimeout(() => {
                   isRunning = true;
@@ -265,7 +318,6 @@
                 }, SPRINT_DELAY);
               }
               
-              // Update sprint progress
               const startTime = Date.now();
               const updateProgress = () => {
                 if (moveKeys[key] && !isRunning) {
@@ -282,20 +334,16 @@
               e.preventDefault();
               e.stopPropagation();
               moveKeys[key] = false;
-              console.log(`Button ${key} released`); // Debug log
               
-              // Hide sprint indicator if no keys pressed
               if (!moveKeys.up && !moveKeys.down && !moveKeys.left && !moveKeys.right) {
                 if (sprintIndicator) sprintIndicator.style.display = 'none';
               }
               
-              // Clear sprint timer for this key
               if (sprintTimers[key]) {
                 clearTimeout(sprintTimers[key]);
                 sprintTimers[key] = null;
               }
               
-              // Reset running if no other movement keys are pressed
               if (!moveKeys.up && !moveKeys.down) {
                 isRunning = false;
                 el.classList.remove('sprinting');
@@ -304,7 +352,6 @@
               }
             };
             
-            // Add event listeners
             el.addEventListener('touchstart', start, { passive: false });
             el.addEventListener('touchend', end, { passive: false });
             el.addEventListener('touchcancel', end, { passive: false });
@@ -313,24 +360,22 @@
             el.addEventListener('mouseleave', end);
           };
 
-          // Setup all buttons
           setupButton('up', 'up');
           setupButton('down', 'down');
           setupButton('left', 'left');
           setupButton('right', 'right');
 
-          // Keyboard controls for testing
+          // Keyboard controls
           window.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
-              case 'w': moveKeys.up = true; console.log('W pressed'); e.preventDefault(); break;
-              case 's': moveKeys.down = true; console.log('S pressed'); e.preventDefault(); break;
-              case 'a': moveKeys.left = true; console.log('A pressed'); e.preventDefault(); break;
-              case 'd': moveKeys.right = true; console.log('D pressed'); e.preventDefault(); break;
-              // Camera controls with arrow keys as fallback
-              case 'arrowleft': cameraRotation.y += 2; e.preventDefault(); updateCameraRotation(); break;
-              case 'arrowright': cameraRotation.y -= 2; e.preventDefault(); updateCameraRotation(); break;
-              case 'arrowup': cameraRotation.x = Math.min(45, cameraRotation.x + 2); e.preventDefault(); updateCameraRotation(); break; // Increased max tilt
-              case 'arrowdown': cameraRotation.x = Math.max(0, cameraRotation.x - 2); e.preventDefault(); updateCameraRotation(); break; // Min tilt 0 to keep player visible
+              case 'w': moveKeys.up = true; e.preventDefault(); break;
+              case 's': moveKeys.down = true; e.preventDefault(); break;
+              case 'a': moveKeys.left = true; e.preventDefault(); break;
+              case 'd': moveKeys.right = true; e.preventDefault(); break;
+              case 'arrowleft': cameraRotation.y += 2; updateCameraRotation(); e.preventDefault(); break;
+              case 'arrowright': cameraRotation.y -= 2; updateCameraRotation(); e.preventDefault(); break;
+              case 'arrowup': cameraRotation.x = Math.min(45, cameraRotation.x + 2); updateCameraRotation(); e.preventDefault(); break;
+              case 'arrowdown': cameraRotation.x = Math.max(5, cameraRotation.x - 2); updateCameraRotation(); e.preventDefault(); break;
             }
           });
           
@@ -342,16 +387,15 @@
               case 'd': moveKeys.right = false; e.preventDefault(); break;
             }
             
-            // Reset running if no forward/back movement
             if (!moveKeys.up && !moveKeys.down) {
               isRunning = false;
               document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('sprinting'));
             }
           });
 
-          // Touch controls for camera swipe
+          // Touch controls for camera
           document.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('btn')) return; // Ignore if button press
+            if (e.target.classList.contains('btn')) return;
             isTouching = true;
             touchStart.x = e.touches[0].clientX;
             touchStart.y = e.touches[0].clientY;
@@ -369,17 +413,11 @@
             const deltaX = touchEnd.x - touchStart.x;
             const deltaY = touchEnd.y - touchStart.y;
             
-            // Apply sensitivity and update camera rotation
             cameraRotation.y += deltaX * SENSITIVITY;
-            cameraRotation.x = Math.max(0, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY)); // Keep between 0-45 degrees
-            
-            // Normalize y rotation
+            cameraRotation.x = Math.max(5, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY));
             cameraRotation.y = cameraRotation.y % 360;
             
-            // Update camera rig rotation
             updateCameraRotation();
-            
-            // Reset touch start for continuous movement
             touchStart = touchEnd;
           }, { passive: false });
 
@@ -387,7 +425,7 @@
             isTouching = false;
           });
 
-          // Mouse drag for camera control (for testing on desktop)
+          // Mouse drag for camera
           let isMouseDown = false;
           let mouseStart = { x: 0, y: 0 };
 
@@ -405,12 +443,10 @@
             const deltaY = e.clientY - mouseStart.y;
             
             cameraRotation.y += deltaX * SENSITIVITY * 0.5;
-            cameraRotation.x = Math.max(0, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY * 0.5));
-            
+            cameraRotation.x = Math.max(5, Math.min(45, cameraRotation.x - deltaY * SENSITIVITY * 0.5));
             cameraRotation.y = cameraRotation.y % 360;
             
             updateCameraRotation();
-            
             mouseStart.x = e.clientX;
             mouseStart.y = e.clientY;
           });
@@ -419,7 +455,6 @@
             isMouseDown = false;
           });
 
-          // Function to update camera rotation
           function updateCameraRotation() {
             cameraRig.setAttribute('rotation', {
               x: cameraRotation.x,
@@ -428,26 +463,26 @@
             });
           }
 
-          // Animation validation function
-          const validateAndSetAnimation = (newAnim) => {
-            if (newAnim !== currentAnim && modelLoaded) {
-              model.setAttribute('animation-mixer', `clip: ${newAnim}; crossFadeDuration: 0.2`);
+          // Animation function (simplified for fallback)
+          const updateAnimation = (newAnim) => {
+            if (newAnim !== currentAnim) {
               currentAnim = newAnim;
-              console.log(`Animation set to: ${newAnim}`);
+              console.log('Animation:', newAnim);
+              
+              // If using fallback, we could animate the limbs here
+              // For now, just log
             }
           };
 
-          // Simple collision detection with buildings
+          // Simple collision detection
           function checkCollision(newPosition) {
-            // Define building positions and sizes (approximate based on the model)
             const buildingZones = [
-              { x: [-10, 10], z: [-15, -5] },  // Example building zone 1
-              { x: [15, 25], z: [10, 20] },    // Example building zone 2
-              { x: [-25, -15], z: [15, 25] },  // Example building zone 3
-              { x: [-5, 5], z: [20, 30] },     // Example building zone 4
+              { x: [-10, 10], z: [-15, -5] },
+              { x: [15, 25], z: [10, 20] },
+              { x: [-25, -15], z: [15, 25] },
+              { x: [-5, 5], z: [20, 30] },
             ];
             
-            // Add buffer around buildings (player radius)
             const buffer = 2.0;
             
             for (let zone of buildingZones) {
@@ -455,11 +490,10 @@
                   newPosition.x < zone.x[1] + buffer && 
                   newPosition.z > zone.z[0] - buffer && 
                   newPosition.z < zone.z[1] + buffer) {
-                return true; // Collision detected
+                return true;
               }
             }
             
-            // General boundary
             if (Math.abs(newPosition.x) > BOUNDARY || Math.abs(newPosition.z) > BOUNDARY) {
               return true;
             }
@@ -469,18 +503,15 @@
 
           // Main game loop
           function tick() {
-            if (!rig || !model) return;
+            if (!rig) return;
             
             const now = performance.now();
             const delta = Math.min(32, now - lastTime) / 16;
             lastTime = now;
             
             try {
-              // Get current rotation
-              let rotation = rig.getAttribute('rotation');
-              if (!rotation) rotation = { x: 0, y: 0, z: 0 };
+              let rotation = rig.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
               
-              // Handle player rotation (left/right buttons)
               if (moveKeys.left) rotation.y += 2.5 * delta;
               if (moveKeys.right) rotation.y -= 2.5 * delta;
               
@@ -489,11 +520,9 @@
               
               rig.setAttribute('rotation', rotation);
               
-              // Handle position (forward/backward)
-              let position = rig.getAttribute('position');
-              if (!position) position = { x: 0, y: 1, z: 0 };
+              let position = rig.getAttribute('position') || { x: 0, y: 1.5, z: 0 };
               
-              const baseSpeed = 0.15; // Increased speed for better movement
+              const baseSpeed = 0.15;
               const runSpeed = 0.3;
               let speed = (isRunning ? runSpeed : baseSpeed) * delta;
               
@@ -504,38 +533,24 @@
                 const direction = moveKeys.up ? 1 : -1;
                 const angleRad = rotation.y * (Math.PI / 180);
                 
-                // Calculate new position
                 let newX = position.x - Math.sin(angleRad) * speed * direction;
                 let newZ = position.z - Math.cos(angleRad) * speed * direction;
                 
-                // Check collision before applying movement
                 if (!checkCollision({ x: newX, z: newZ })) {
                   position.x = newX;
                   position.z = newZ;
                   moved = true;
-                  console.log(`Moving to: x=${position.x.toFixed(2)}, z=${position.z.toFixed(2)}`); // Debug log
                 }
                 
-                // Set animation based on direction and running state
-                if (direction === 1) {
-                  targetAnim = isRunning ? 'run-forward' : 'walk-forward';
-                } else {
-                  targetAnim = isRunning ? 'run-backwards' : 'walk-backwards';
-                }
+                targetAnim = direction === 1 
+                  ? (isRunning ? 'run-forward' : 'walk-forward')
+                  : (isRunning ? 'run-backwards' : 'walk-backwards');
               }
               
-              // Always keep Y position fixed to prevent sinking
-              position.y = 1;
-              
-              // Update position
+              position.y = 1.5; // Keep fixed height
               rig.setAttribute('position', position);
               
-              // Update animation only if moved
-              if (moved) {
-                validateAndSetAnimation(targetAnim);
-              } else {
-                validateAndSetAnimation('idle');
-              }
+              updateAnimation(moved ? targetAnim : 'idle');
               
             } catch (error) {
               console.error('Error in game loop:', error);
@@ -544,35 +559,33 @@
             requestAnimationFrame(tick);
           }
 
-          // Start the game loop
           tick();
 
           // Handle model loading
           model.addEventListener('model-loaded', () => {
-            console.log('Player model loaded successfully');
+            console.log('Player model loaded successfully - keeping gltf model');
+            model.setAttribute('visible', 'true');
+            fallback.setAttribute('visible', 'false');
             modelLoaded = true;
-            
-            // Log model details for debugging
-            console.log('Model scale:', model.getAttribute('scale'));
-            console.log('Model position:', model.getAttribute('position'));
           });
 
-          // Handle model loading errors
           model.addEventListener('model-error', (error) => {
-            console.error('Failed to load player model:', error);
-            // Fallback to a visible shape if model fails
-            model.setAttribute('geometry', 'primitive: capsule; height: 2; radius: 0.5');
-            model.setAttribute('material', 'color: #4CAF50');
-            modelLoaded = true;
-            console.log('Using fallback capsule shape');
+            console.error('Failed to load player model, using fallback:', error);
+            showFallbackCharacter();
           });
 
-          // Log initial positions for debugging
-          console.log('Initial rig position:', rig.getAttribute('position'));
-          console.log('Initial camera position:', cameraRig.getAttribute('position'));
-          console.log('Initial camera rotation:', cameraRig.getAttribute('rotation'));
+          // Set a timeout to show fallback if model takes too long to load
+          setTimeout(() => {
+            if (!modelLoaded) {
+              console.log('Model load timeout - using fallback');
+              showFallbackCharacter();
+            }
+          }, 3000);
 
-          console.log('Controls initialized successfully');
+          // Initial camera rotation
+          updateCameraRotation();
+          
+          console.log('Controls initialized');
         });
       })();
     </script>
