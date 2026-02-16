@@ -11,117 +11,174 @@
     <style>
       body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
       
-      /* Joystick container */
+      /* Joystick container - made more visible */
       #joystick-container {
         position: absolute;
-        bottom: 40px;
-        left: 40px;
-        width: 150px;
-        height: 150px;
+        bottom: 50px;
+        left: 50px;
+        width: 180px;
+        height: 180px;
         z-index: 2000;
         pointer-events: auto;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+      
+      /* Style for the joystick itself (nipplejs adds its own elements) */
+      .joystick-base {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border: 3px solid rgba(0, 0, 0, 0.5) !important;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5) !important;
+      }
+      
+      .joystick-adv {
+        background-color: rgba(100, 150, 255, 0.9) !important;
+        border: 2px solid white !important;
+        box-shadow: 0 0 10px rgba(100, 150, 255, 0.8) !important;
       }
       
       /* Sprint button */
       #sprint-btn {
         position: absolute;
-        bottom: 40px;
-        right: 40px;
-        width: 80px;
-        height: 80px;
-        background: rgba(0, 0, 0, 0.7);
-        border: 3px solid rgba(255, 255, 255, 0.9);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: bold;
-        color: white;
-        z-index: 2000;
-        backdrop-filter: blur(4px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        transition: all 0.2s ease;
-        pointer-events: auto;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      
-      #sprint-btn.active {
-        background: rgba(255, 100, 100, 0.9);
-        border-color: #ff0;
-        transform: scale(1.1);
-        box-shadow: 0 0 20px rgba(255, 100, 100, 0.8);
-      }
-      
-      /* Sprint progress indicator */
-      #sprint-progress-container {
-        position: absolute;
-        bottom: 130px;
-        right: 40px;
-        width: 80px;
-        height: 8px;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 4px;
-        z-index: 2001;
-        overflow: hidden;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
-      
-      #sprint-progress {
-        width: 0%;
-        height: 100%;
-        background: linear-gradient(90deg, #ffaa00, #ff5500);
-        transition: width 0.1s linear;
-        border-radius: 4px;
-      }
-      
-      /* Camera control instructions */
-      .instructions {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        font-size: 14px;
-        z-index: 2000;
-        pointer-events: none;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      }
-      
-      .instructions span {
-        color: #ffaa00;
-        font-weight: bold;
-      }
-      
-      /* Action buttons container (for future use) */
-      #action-buttons {
-        position: absolute;
-        bottom: 40px;
-        right: 140px;
-        display: flex;
-        gap: 15px;
-        z-index: 2000;
-      }
-      
-      .action-btn {
-        width: 60px;
-        height: 60px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 2px solid rgba(255, 255, 255, 0.8);
+        bottom: 50px;
+        right: 50px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 70, 70, 0.8);
+        border: 4px solid rgba(255, 255, 255, 0.9);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 20px;
+        font-weight: bold;
+        color: white;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 70, 70, 0.4);
+        transition: all 0.2s ease;
+        pointer-events: auto;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      }
+      
+      #sprint-btn.active {
+        background: rgba(255, 150, 150, 0.9);
+        border-color: #ff0;
+        transform: scale(1.15);
+        box-shadow: 0 0 30px rgba(255, 255, 0, 0.8);
+      }
+      
+      /* Sprint progress indicator */
+      #sprint-progress-container {
+        position: absolute;
+        bottom: 160px;
+        right: 50px;
+        width: 100px;
+        height: 12px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 6px;
+        z-index: 2001;
+        overflow: hidden;
+        backdrop-filter: blur(4px);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
+      
+      #sprint-progress {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #ffaa00, #ff5500);
+        transition: width 0.1s linear;
+        border-radius: 4px;
+        box-shadow: 0 0 10px #ffaa00;
+      }
+      
+      /* AR/VR buttons */
+      .mode-buttons {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        display: flex;
+        gap: 15px;
+        z-index: 2000;
+      }
+      
+      .mode-btn {
+        width: 70px;
+        height: 70px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: bold;
         color: white;
         backdrop-filter: blur(4px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      
+      .mode-btn:hover {
+        transform: scale(1.1);
+        background: rgba(50, 50, 50, 0.8);
+        border-color: #ffaa00;
+      }
+      
+      /* Camera control instructions - repositioned to top left */
+      .instructions {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 18px 25px;
+        border-radius: 15px;
+        font-size: 16px;
+        z-index: 2000;
+        pointer-events: none;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        line-height: 1.8;
+      }
+      
+      .instructions span {
+        color: #ffaa00;
+        font-weight: bold;
+        font-size: 18px;
+        margin-right: 5px;
+      }
+      
+      /* Action buttons container */
+      #action-buttons {
+        position: absolute;
+        bottom: 50px;
+        right: 180px;
+        display: flex;
+        gap: 20px;
+        z-index: 2000;
+      }
+      
+      .action-btn {
+        width: 80px;
+        height: 80px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        color: white;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         transition: all 0.2s ease;
         pointer-events: auto;
       }
@@ -129,19 +186,60 @@
       .action-btn:active {
         transform: scale(0.9);
         background: rgba(255, 255, 255, 0.3);
+        border-color: #ffaa00;
       }
       
-      @media (max-width: 400px) {
-        #joystick-container { transform: scale(0.8); left: 20px; bottom: 20px; }
-        #sprint-btn { transform: scale(0.8); right: 20px; bottom: 20px; }
-        #sprint-progress-container { right: 20px; bottom: 110px; }
-        .instructions { font-size: 12px; padding: 10px; }
-        #action-buttons { right: 120px; transform: scale(0.8); }
+      /* Mobile responsiveness */
+      @media (max-width: 600px) {
+        #joystick-container { 
+          width: 150px; 
+          height: 150px; 
+          left: 25px; 
+          bottom: 25px; 
+        }
+        #sprint-btn { 
+          width: 80px; 
+          height: 80px; 
+          right: 25px; 
+          bottom: 25px; 
+          font-size: 16px;
+        }
+        #sprint-progress-container { 
+          right: 25px; 
+          bottom: 115px; 
+          width: 80px;
+        }
+        .instructions { 
+          font-size: 14px; 
+          padding: 12px 18px;
+          top: 15px;
+          left: 15px;
+        }
+        .mode-buttons { 
+          top: 15px; 
+          right: 15px; 
+          gap: 10px;
+        }
+        .mode-btn { 
+          width: 55px; 
+          height: 55px; 
+          font-size: 16px;
+        }
+        #action-buttons { 
+          right: 120px; 
+          bottom: 25px; 
+          gap: 15px;
+        }
+        .action-btn { 
+          width: 65px; 
+          height: 65px; 
+          font-size: 24px;
+        }
       }
     </style>
   </head>
   <body>
-    <!-- Joystick container -->
+    <!-- Joystick container - clearly visible -->
     <div id="joystick-container"></div>
     
     <!-- Sprint button -->
@@ -152,13 +250,19 @@
       <div id="sprint-progress"></div>
     </div>
     
-    <!-- Action buttons (placeholder for future) -->
+    <!-- AR/VR buttons (as seen in screenshot) -->
+    <div class="mode-buttons">
+      <div class="mode-btn">AR</div>
+      <div class="mode-btn">VR</div>
+    </div>
+    
+    <!-- Action buttons -->
     <div id="action-buttons">
       <div class="action-btn">⚔️</div>
       <div class="action-btn">🛡️</div>
     </div>
 
-    <!-- Camera control instructions -->
+    <!-- Camera control instructions (matches screenshot) -->
     <div class="instructions">
       <span>👆</span> Drag screen to rotate camera<br>
       <span>🕹️</span> Left joystick to move<br>
@@ -190,31 +294,30 @@
 
       <!-- Player Rig -->
       <a-entity id="player-rig" 
-                position="0 1.5 0">
+                position="0 2 0"> <!-- Increased base height for larger player -->
         
-        <!-- Player Model - 3x bigger than before (0.008 * 3 = 0.024) -->
+        <!-- Player Model - 2x bigger than before (0.024 * 2 = 0.048) -->
         <a-entity id="player-model" 
                   gltf-model="#player" 
-                  scale="0.024 0.024 0.024"
+                  scale="0.048 0.048 0.048"
                   rotation="0 0 0"
                   visible="true"
                   animation-mixer="clip: idle; crossFadeDuration: 0.2">
         </a-entity>
         
-        <!-- Fallback player (only shows if gltf fails) -->
+        <!-- Fallback player (only shows if gltf fails) - also scaled up -->
         <a-entity id="player-fallback" visible="false">
-          <a-sphere color="#4CAF50" radius="0.8" position="0 1.2 0"></a-sphere>
-          <a-sphere color="#FFC107" radius="0.4" position="0 2.2 0"></a-sphere>
-          <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="-0.9 1.6 0" rotation="0 0 20"></a-cylinder>
-          <a-cylinder color="#4CAF50" radius="0.15" height="1.2" position="0.9 1.6 0" rotation="0 0 -20"></a-cylinder>
-          <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="-0.4 0.6 0"></a-cylinder>
-          <a-cylinder color="#2E7D32" radius="0.2" height="1.2" position="0.4 0.6 0"></a-cylinder>
+          <a-sphere color="#4CAF50" radius="1.6" position="0 2.4 0"></a-sphere>
+          <a-sphere color="#FFC107" radius="0.8" position="0 4.4 0"></a-sphere>
+          <a-cylinder color="#4CAF50" radius="0.3" height="2.4" position="-1.8 3.2 0" rotation="0 0 20"></a-cylinder>
+          <a-cylinder color="#4CAF50" radius="0.3" height="2.4" position="1.8 3.2 0" rotation="0 0 -20"></a-cylinder>
+          <a-cylinder color="#2E7D32" radius="0.4" height="2.4" position="-0.8 1.2 0"></a-cylinder>
+          <a-cylinder color="#2E7D32" radius="0.4" height="2.4" position="0.8 1.2 0"></a-cylinder>
         </a-entity>
 
-        <!-- CINEMATIC THIRD-PERSON CAMERA -->
-        <!-- Camera rig that follows player with smooth cinematic positioning -->
+        <!-- CINEMATIC THIRD-PERSON CAMERA - adjusted for larger player -->
         <a-entity id="camera-rig" 
-                  position="0 6 12"  <!-- Height: 6, Distance: 12 -->
+                  position="0 8 16"  <!-- Height: 8, Distance: 16 (scaled for larger player) -->
                   rotation="0 180 0">
           <a-entity id="camera" 
                     camera 
@@ -229,20 +332,20 @@
       
       <!-- Key light (main illumination) -->
       <a-entity light="type: directional; intensity: 1.2; castShadow: true" 
-                position="5 15 10" 
-                target="0 1.5 0">
+                position="5 20 15" 
+                target="0 3 0">
       </a-entity>
       
       <!-- Fill light (from behind) -->
       <a-entity light="type: directional; intensity: 0.6; color: #B0C4DE" 
-                position="-5 10 -10" 
-                target="0 1.5 0">
+                position="-5 15 -15" 
+                target="0 3 0">
       </a-entity>
       
       <!-- Rim light (for edge highlighting) -->
       <a-entity light="type: directional; intensity: 0.8; color: #FFFACD" 
-                position="0 8 -15" 
-                target="0 1.5 0">
+                position="0 12 -20" 
+                target="0 3 0">
       </a-entity>
       
       <!-- Add some atmospheric fog for depth -->
@@ -267,15 +370,15 @@
           if (!rig || !model || !cameraRig) return;
 
           // Movement state
-          let moveDirection = { x: 0, y: 0 }; // Joystick input (-1 to 1)
+          let moveDirection = { x: 0, y: 0 };
           let isSprinting = false;
           let sprintCharge = 100;
           let canSprint = true;
-          const SPRINT_DRAIN_RATE = 25; // % per second
-          const SPRINT_RECHARGE_RATE = 15; // % per second
+          const SPRINT_DRAIN_RATE = 25;
+          const SPRINT_RECHARGE_RATE = 15;
           
           // Camera state
-          let cameraRotation = { x: 25, y: 180 }; // Cinematic angle
+          let cameraRotation = { x: 25, y: 180 };
           let touchStart = { x: 0, y: 0 };
           let isTouching = false;
           const CAMERA_SENSITIVITY = 0.3;
@@ -290,7 +393,7 @@
           // BOUNDARY
           const BOUNDARY = 45;
 
-          // Initialize joystick
+          // Initialize joystick with visible styling
           const joystick = nipplejs.create({
             zone: document.getElementById('joystick-container'),
             mode: 'static',
@@ -299,16 +402,33 @@
             size: 120,
             lockY: false,
             lockX: false,
-            restOpacity: 0.7,
-            fadeTime: 100
+            restOpacity: 1,
+            fadeTime: 100,
+            dataOnly: false
           });
+
+          // Add custom classes to joystick elements for styling
+          setTimeout(() => {
+            const joystickElements = document.querySelectorAll('.nipple');
+            joystickElements.forEach(el => {
+              el.classList.add('joystick-base');
+              const back = el.querySelector('.back');
+              const front = el.querySelector('.front');
+              if (back) back.classList.add('joystick-base');
+              if (front) front.classList.add('joystick-adv');
+            });
+          }, 100);
 
           // Joystick events
           joystick.on('move', (evt, nipple) => {
             const vector = nipple.vector;
-            // Normalize and invert Y if needed
             moveDirection.x = vector.x;
-            moveDirection.y = -vector.y; // Invert so up = forward
+            moveDirection.y = -vector.y;
+            
+            // Visual feedback
+            if (nipple.front) {
+              nipple.front.style.backgroundColor = 'rgba(255, 200, 100, 0.9)';
+            }
           });
 
           joystick.on('end', () => {
@@ -352,14 +472,19 @@
 
           // Camera touch controls
           document.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
+            if (e.target.classList.contains('action-btn') || 
+                e.target.id === 'sprint-btn' ||
+                e.target.closest('.nipple')) return;
             isTouching = true;
             touchStart.x = e.touches[0].clientX;
             touchStart.y = e.touches[0].clientY;
           }, { passive: true });
 
           document.addEventListener('touchmove', (e) => {
-            if (!isTouching || e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
+            if (!isTouching || 
+                e.target.classList.contains('action-btn') || 
+                e.target.id === 'sprint-btn' ||
+                e.target.closest('.nipple')) return;
             e.preventDefault();
             
             const touchEnd = {
@@ -370,7 +495,6 @@
             const deltaX = touchEnd.x - touchStart.x;
             const deltaY = touchEnd.y - touchStart.y;
             
-            // Update camera rotation with cinematic limits
             cameraRotation.y += deltaX * CAMERA_SENSITIVITY;
             cameraRotation.x = Math.max(15, Math.min(45, cameraRotation.x - deltaY * CAMERA_SENSITIVITY));
             cameraRotation.y = cameraRotation.y % 360;
@@ -388,14 +512,19 @@
           let mouseStart = { x: 0, y: 0 };
 
           document.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
+            if (e.target.classList.contains('action-btn') || 
+                e.target.id === 'sprint-btn' ||
+                e.target.closest('.nipple')) return;
             isMouseDown = true;
             mouseStart.x = e.clientX;
             mouseStart.y = e.clientY;
           });
 
           document.addEventListener('mousemove', (e) => {
-            if (!isMouseDown || e.target.classList.contains('action-btn') || e.target.id === 'sprint-btn') return;
+            if (!isMouseDown || 
+                e.target.classList.contains('action-btn') || 
+                e.target.id === 'sprint-btn' ||
+                e.target.closest('.nipple')) return;
             
             const deltaX = e.clientX - mouseStart.x;
             const deltaY = e.clientY - mouseStart.y;
@@ -430,7 +559,7 @@
               { x: [-5, 5], z: [20, 30] },
             ];
             
-            const buffer = 2.5;
+            const buffer = 3.0; // Increased buffer for larger player
             
             for (let zone of buildingZones) {
               if (newPosition.x > zone.x[0] - buffer && 
@@ -457,7 +586,7 @@
           // Main game loop
           function tick() {
             const now = performance.now();
-            const delta = Math.min(32, now - lastTime) / 1000; // Convert to seconds
+            const delta = Math.min(32, now - lastTime) / 1000;
             lastTime = now;
             
             try {
@@ -478,51 +607,40 @@
               
               // Get current rotation and position
               let rotation = rig.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
-              let position = rig.getAttribute('position') || { x: 0, y: 1.5, z: 0 };
+              let position = rig.getAttribute('position') || { x: 0, y: 2, z: 0 };
               
               // Calculate movement from joystick
               if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
-                // Calculate speed
-                const baseSpeed = 2.5; // Units per second
-                const sprintSpeed = 5.0;
+                const baseSpeed = 3.5; // Increased speed for larger player
+                const sprintSpeed = 7.0;
                 const speed = (isSprinting && sprintCharge > 0 ? sprintSpeed : baseSpeed) * delta;
                 
-                // Get camera direction for movement relative to camera view
                 const cameraAngle = (cameraRotation.y * Math.PI) / 180;
                 
-                // Calculate movement directions based on camera orientation
-                // Forward/backward relative to camera
                 const forwardX = -Math.sin(cameraAngle);
                 const forwardZ = -Math.cos(cameraAngle);
-                
-                // Right/left relative to camera
                 const rightX = Math.cos(cameraAngle);
                 const rightZ = -Math.sin(cameraAngle);
                 
-                // Combine joystick input with camera directions
                 let moveX = (forwardX * moveDirection.y + rightX * moveDirection.x) * speed;
                 let moveZ = (forwardZ * moveDirection.y + rightZ * moveDirection.x) * speed;
                 
-                // Calculate new position
                 let newX = position.x + moveX;
                 let newZ = position.z + moveZ;
                 
-                // Check collision
                 if (!checkCollision({ x: newX, z: newZ })) {
                   position.x = newX;
                   position.z = newZ;
                 }
                 
-                // Rotate player to face movement direction
                 if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
                   const moveAngle = Math.atan2(moveX, moveZ);
                   rotation.y = (moveAngle * 180) / Math.PI;
                 }
                 
-                // Determine animation
-                const speed magnitude = Math.sqrt(moveDirection.x * moveDirection.x + moveDirection.y * moveDirection.y);
-                if (magnitude > 0.5) {
-                  updateAnimation(isSprinting ? 'run-forward' : 'walk-forward');
+                const magnitude = Math.sqrt(moveDirection.x * moveDirection.x + moveDirection.y * moveDirection.y);
+                if (magnitude > 0.5 && isSprinting && sprintCharge > 0) {
+                  updateAnimation('run-forward');
                 } else {
                   updateAnimation('walk-forward');
                 }
@@ -530,10 +648,7 @@
                 updateAnimation('idle');
               }
               
-              // Keep Y position fixed
-              position.y = 1.5;
-              
-              // Update rig
+              position.y = 2; // Keep Y position fixed at new height
               rig.setAttribute('rotation', rotation);
               rig.setAttribute('position', position);
               
@@ -568,4 +683,4 @@
       })();
     </script>
   </body>
-            </html>
+  </html>
