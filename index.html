@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Subrural - Joystick Controls & Cinematic Camera</title>
+    <title>Subrural - Behind Player Camera & Realistic Lighting</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.9.0/dist/nipplejs.min.js"></script>
@@ -11,7 +11,7 @@
     <style>
       body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
       
-      /* Joystick container - made more visible */
+      /* Joystick container */
       #joystick-container {
         position: absolute;
         bottom: 50px;
@@ -26,7 +26,6 @@
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       }
       
-      /* Style for the joystick itself (nipplejs adds its own elements) */
       .joystick-base {
         background-color: rgba(255, 255, 255, 0.9) !important;
         border: 3px solid rgba(0, 0, 0, 0.5) !important;
@@ -131,7 +130,7 @@
         border-color: #ffaa00;
       }
       
-      /* Camera control instructions - repositioned to top left */
+      /* Camera control instructions */
       .instructions {
         position: absolute;
         top: 30px;
@@ -239,7 +238,7 @@
     </style>
   </head>
   <body>
-    <!-- Joystick container - clearly visible -->
+    <!-- Joystick container -->
     <div id="joystick-container"></div>
     
     <!-- Sprint button -->
@@ -250,7 +249,7 @@
       <div id="sprint-progress"></div>
     </div>
     
-    <!-- AR/VR buttons (as seen in screenshot) -->
+    <!-- AR/VR buttons -->
     <div class="mode-buttons">
       <div class="mode-btn">AR</div>
       <div class="mode-btn">VR</div>
@@ -262,14 +261,14 @@
       <div class="action-btn">🛡️</div>
     </div>
 
-    <!-- Camera control instructions (matches screenshot) -->
+    <!-- Camera control instructions -->
     <div class="instructions">
       <span>👆</span> Drag screen to rotate camera<br>
       <span>🕹️</span> Left joystick to move<br>
       <span>⚡</span> Hold SPRINT to run
     </div>
 
-    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true" vr-mode-ui="enabled: true">
+    <a-scene physics="gravity: 0; debug: false" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true" vr-mode-ui="enabled: true" shadow="type: pcfsoft">
       <a-assets>
         <a-asset-item id="subrural" src="Subrural.glb"></a-asset-item>
         <a-asset-item id="player" src="Player.glb"></a-asset-item>
@@ -280,32 +279,33 @@
       <a-entity gltf-model="#subrural" 
                 position="0 0 0"
                 static-body
+                shadow="cast: true; receive: true"
                 id="environment-collision"></a-entity>
       
       <!-- Animated Ground -->
       <a-entity gltf-model="#ground" 
                 position="0 0 0" 
                 static-body
-                shadow="receive: true"
+                shadow="cast: true; receive: true"
                 animation-mixer="clip: idle">
       </a-entity>
       
-      <a-sky color="#87CEEB"></a-sky>
+      <a-sky color="#0A1A2A"></a-sky> <!-- Darker sky for more dramatic shadows -->
 
       <!-- Player Rig -->
       <a-entity id="player-rig" 
-                position="0 2 0"> <!-- Increased base height for larger player -->
+                position="0 2 0">
         
-        <!-- Player Model - 2x bigger than before (0.024 * 2 = 0.048) -->
+        <!-- Player Model - showing back to camera -->
         <a-entity id="player-model" 
                   gltf-model="#player" 
                   scale="0.048 0.048 0.048"
-                  rotation="0 0 0"
+                  rotation="0 0 0"  <!-- 0 rotation means model's back faces +Z direction -->
                   visible="true"
                   animation-mixer="clip: idle; crossFadeDuration: 0.2">
         </a-entity>
         
-        <!-- Fallback player (only shows if gltf fails) - also scaled up -->
+        <!-- Fallback player (only shows if gltf fails) -->
         <a-entity id="player-fallback" visible="false">
           <a-sphere color="#4CAF50" radius="1.6" position="0 2.4 0"></a-sphere>
           <a-sphere color="#FFC107" radius="0.8" position="0 4.4 0"></a-sphere>
@@ -315,10 +315,11 @@
           <a-cylinder color="#2E7D32" radius="0.4" height="2.4" position="0.8 1.2 0"></a-cylinder>
         </a-entity>
 
-        <!-- CINEMATIC THIRD-PERSON CAMERA - adjusted for larger player -->
+        <!-- CAMERA POSITIONED TO SHOW PLAYER'S BACK -->
+        <!-- Camera is placed at negative Z to look at player from behind -->
         <a-entity id="camera-rig" 
-                  position="0 8 16"  <!-- Height: 8, Distance: 16 (scaled for larger player) -->
-                  rotation="0 180 0">
+                  position="0 8 -16"  <!-- Negative Z = behind player looking at their back -->
+                  rotation="0 0 0">    <!-- 0 rotation means camera looks at +Z direction (at player's back) -->
           <a-entity id="camera" 
                     camera 
                     look-controls="pointerLockEnabled: false; enabled: false"
@@ -327,29 +328,37 @@
         </a-entity>
       </a-entity>
 
-      <!-- Cinematic Lighting -->
-      <a-entity light="type: ambient; intensity: 1.0"></a-entity>
+      <!-- REALISTIC LIGHTING WITH SHADOWS -->
+      <!-- Ambient light (reduced for more contrast) -->
+      <a-entity light="type: ambient; intensity: 0.3; color: #404060"></a-entity>
       
-      <!-- Key light (main illumination) -->
-      <a-entity light="type: directional; intensity: 1.2; castShadow: true" 
-                position="5 20 15" 
-                target="0 3 0">
+      <!-- Main directional light (key light) - creates strong shadows -->
+      <a-entity light="type: directional; 
+                      intensity: 1.5; 
+                      castShadow: true;
+                      shadowMapWidth: 2048;
+                      shadowMapHeight: 2048;
+                      shadowBias: -0.0005;
+                      shadowCameraNear: 1;
+                      shadowCameraFar: 50;
+                      shadowCameraLeft: -20;
+                      shadowCameraRight: 20;
+                      shadowCameraTop: 20;
+                      shadowCameraBottom: -20;" 
+                position="15 25 10"  <!-- Position to cast dramatic shadows -->
+                target="0 2 0">
       </a-entity>
       
-      <!-- Fill light (from behind) -->
-      <a-entity light="type: directional; intensity: 0.6; color: #B0C4DE" 
-                position="-5 15 -15" 
-                target="0 3 0">
+      <!-- Rim light (subtle, only to prevent complete darkness on back) -->
+      <a-entity light="type: directional; intensity: 0.4; color: #5577AA" 
+                position="-5 10 -20" 
+                target="0 2 0">
       </a-entity>
       
-      <!-- Rim light (for edge highlighting) -->
-      <a-entity light="type: directional; intensity: 0.8; color: #FFFACD" 
-                position="0 12 -20" 
-                target="0 3 0">
-      </a-entity>
+      <!-- Fill light is REMOVED to create more dramatic shadows -->
       
-      <!-- Add some atmospheric fog for depth -->
-      <a-entity fog="type: exponential; color: #87CEEB; density: 0.015"></a-entity>
+      <!-- Atmospheric fog for depth -->
+      <a-entity fog="type: exponential; color: #1A2A3A; density: 0.02"></a-entity>
     </a-scene>
 
     <script>
@@ -377,8 +386,8 @@
           const SPRINT_DRAIN_RATE = 25;
           const SPRINT_RECHARGE_RATE = 15;
           
-          // Camera state
-          let cameraRotation = { x: 25, y: 180 };
+          // Camera state - adjusted for behind-player view
+          let cameraRotation = { x: 25, y: 0 };  // Changed from 180 to 0 for behind view
           let touchStart = { x: 0, y: 0 };
           let isTouching = false;
           const CAMERA_SENSITIVITY = 0.3;
@@ -393,7 +402,7 @@
           // BOUNDARY
           const BOUNDARY = 45;
 
-          // Initialize joystick with visible styling
+          // Initialize joystick
           const joystick = nipplejs.create({
             zone: document.getElementById('joystick-container'),
             mode: 'static',
@@ -407,7 +416,7 @@
             dataOnly: false
           });
 
-          // Add custom classes to joystick elements for styling
+          // Style joystick
           setTimeout(() => {
             const joystickElements = document.querySelectorAll('.nipple');
             joystickElements.forEach(el => {
@@ -424,11 +433,6 @@
             const vector = nipple.vector;
             moveDirection.x = vector.x;
             moveDirection.y = -vector.y;
-            
-            // Visual feedback
-            if (nipple.front) {
-              nipple.front.style.backgroundColor = 'rgba(255, 200, 100, 0.9)';
-            }
           });
 
           joystick.on('end', () => {
@@ -495,6 +499,7 @@
             const deltaX = touchEnd.x - touchStart.x;
             const deltaY = touchEnd.y - touchStart.y;
             
+            // Update camera rotation - now relative to behind view
             cameraRotation.y += deltaX * CAMERA_SENSITIVITY;
             cameraRotation.x = Math.max(15, Math.min(45, cameraRotation.x - deltaY * CAMERA_SENSITIVITY));
             cameraRotation.y = cameraRotation.y % 360;
@@ -507,7 +512,7 @@
             isTouching = false;
           });
 
-          // Mouse drag for camera (desktop)
+          // Mouse drag for camera
           let isMouseDown = false;
           let mouseStart = { x: 0, y: 0 };
 
@@ -559,7 +564,7 @@
               { x: [-5, 5], z: [20, 30] },
             ];
             
-            const buffer = 3.0; // Increased buffer for larger player
+            const buffer = 3.0;
             
             for (let zone of buildingZones) {
               if (newPosition.x > zone.x[0] - buffer && 
@@ -611,17 +616,20 @@
               
               // Calculate movement from joystick
               if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
-                const baseSpeed = 3.5; // Increased speed for larger player
+                const baseSpeed = 3.5;
                 const sprintSpeed = 7.0;
                 const speed = (isSprinting && sprintCharge > 0 ? sprintSpeed : baseSpeed) * delta;
                 
+                // For behind-view camera, movement relative to camera view
                 const cameraAngle = (cameraRotation.y * Math.PI) / 180;
                 
+                // Calculate movement directions based on camera orientation
                 const forwardX = -Math.sin(cameraAngle);
                 const forwardZ = -Math.cos(cameraAngle);
                 const rightX = Math.cos(cameraAngle);
                 const rightZ = -Math.sin(cameraAngle);
                 
+                // Combine joystick input with camera directions
                 let moveX = (forwardX * moveDirection.y + rightX * moveDirection.x) * speed;
                 let moveZ = (forwardZ * moveDirection.y + rightZ * moveDirection.x) * speed;
                 
@@ -633,11 +641,13 @@
                   position.z = newZ;
                 }
                 
+                // Rotate player to face movement direction
                 if (Math.abs(moveDirection.x) > 0.1 || Math.abs(moveDirection.y) > 0.1) {
                   const moveAngle = Math.atan2(moveX, moveZ);
                   rotation.y = (moveAngle * 180) / Math.PI;
                 }
                 
+                // Determine animation
                 const magnitude = Math.sqrt(moveDirection.x * moveDirection.x + moveDirection.y * moveDirection.y);
                 if (magnitude > 0.5 && isSprinting && sprintCharge > 0) {
                   updateAnimation('run-forward');
@@ -648,7 +658,7 @@
                 updateAnimation('idle');
               }
               
-              position.y = 2; // Keep Y position fixed at new height
+              position.y = 2;
               rig.setAttribute('rotation', rotation);
               rig.setAttribute('position', position);
               
@@ -683,4 +693,4 @@
       })();
     </script>
   </body>
-  </html>
+</html>
